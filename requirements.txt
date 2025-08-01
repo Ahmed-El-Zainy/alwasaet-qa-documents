@@ -1,0 +1,17 @@
+llama-index==0.10.15
+# llama-index-vector-stores-qdrant==0.2.4
+llama-index-embeddings-gemini==0.1.6
+llama-index-llms-gemini==0.1.8
+llama-parse==0.4.0
+qdrant-client==1.7.0
+gradio==4.15.0
+python-dotenv==1.0.0
+PyPDF2==3.0.1
+python-multipart==0.0.6
+uvicorn==0.25.0
+fastapi==0.108.0
+pydantic==2.5.0
+typing-extensions==4.9.0
+nest-asyncio==1.5.8
+google-generativeai
+sentence-transformers==2.2.2

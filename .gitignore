@@ -3,6 +3,11 @@ __pycache__/
 *.py[codz]
 *$py.class
 
+
+.DS_Store
+/logs
+
+
 # C extensions
 *.so
 
@@ -31,7 +36,8 @@ MANIFEST
 #  before PyInstaller builds the exe, so as to inject date/other infos into it.
 *.manifest
 *.spec
-
+/temp
+/qdrant_storage
 # Installer logs
 pip-log.txt
 pip-delete-this-directory.txt
