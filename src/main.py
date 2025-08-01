@@ -10,6 +10,10 @@ from dotenv import load_dotenv
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(os.path.dirname(SCRIPT_DIR))
 
+# print(f"SCRIPT_DIR: {SCRIPT_DIR}")
+# print(f"os.path.dirname(SCRIPT_DIR): {os.path.dirname(SCRIPT_DIR)}")
+# print(f"os.path.dirname(os.path.dirname(SCRIPT_DIR)): {os.path.dirname(os.path.dirname(SCRIPT_DIR))}")
+
 from utils.document_processor import DocumentProcessor
 from utils.vector_store import VectorStoreManager
 from utils.agent import AgenticRAG
@@ -35,6 +39,7 @@ class RAGApplication:
     """Main RAG Application class with Gemini integration"""
     
     def __init__(self, config_path: str = "src/config.yaml"):
+        
         self.config_path = config_path
         
         # Load configuration
@@ -124,3 +129,47 @@ def main():
 
 if __name__ == "__main__":
     main()
+    # Test the code with example in the following api of gemini
+    app = RAGApplication()
+    app.process_documents(["assets/Documents/2020-october-ksa-transparency-report-saudi-arabia-ar.pdf"])
+    result = app.query("can you tell me about the Saudi Arabia transparency report?")
+    print(result)
+    app.clear_memory()
+    app.reset_system()
+
+
+
+
+# """
+# import logging
+
+# from core.model_runtime.entities.model_entities import ModelType
+# from core.model_runtime.errors.validate import CredentialsValidateFailedError
+# from core.model_runtime.model_providers.__base.model_provider import ModelProvider
+
+# logger = logging.getLogger(__name__)
+
+
+# class GoogleProvider(ModelProvider):
+#     def validate_provider_credentials(self, credentials: dict) -> None:
+#         """
+#         Validate provider credentials.
+
+#         If validation fails, raise an exception.
+
+#         :param credentials: provider credentials defined in `provider_credential_schema`.
+#         """
+#         try:
+#             model_instance = self.get_model_instance(ModelType.LLM)
+
+#             # Use `gemini-1.5-pro` for validation instead of the default.
+#             model_instance.validate_credentials(model="gemini-1.5-pro",
+#                                                 credentials=credentials)
+#         except CredentialsValidateFailedError as ex:
+#             raise ex
+#         except Exception as ex:
+#             logger.exception(
+#                 f"{self.get_provider_schema().provider} credentials validation failed"
+#             )
+#             raise ex
+# """
