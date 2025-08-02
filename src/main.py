@@ -3,7 +3,7 @@ import sys
 import logging
 from pathlib import Path
 import yaml
-from dotenv import load_dotenv
+# from dotenv import load_dotenv
 
 
 # fmt: off
@@ -19,7 +19,7 @@ from utils.vector_store import VectorStoreManager
 from utils.agent import AgenticRAG
 
 # Load environment variables
-load_dotenv()
+# load_dotenv()
 
 
 try:
