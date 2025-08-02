@@ -1,51 +1,23 @@
-# src/config.yaml
 app:
   name: "Agentic RAG Application"
   version: "1.0.0"
   debug: false
 
-# Model Provider Configuration
-model_provider: "gemini"  # LLM still uses Gemini
-embedding_provider: "huggingface"  # Embeddings use Hugging Face
+model_provider: "mixed"
+embedding_provider: "huggingface"
+llm_provider: "gemini"
 
-# Gemini Configuration (Google AI) - for LLM only
 gemini:
   llm:
-    # Available models: "gemini-1.5-flash", "gemini-1.5-pro", "gemini-pro"
-    model: "models/gemini-1.5-flash"  # Updated to working model
+    model: "gemini-2.5-flash-lite"
     temperature: 0.1
     max_output_tokens: 2048
-    
-  safety_settings:
-    - category: "HARM_CATEGORY_HARASSMENT"
-      threshold: "BLOCK_MEDIUM_AND_ABOVE"
-    - category: "HARM_CATEGORY_HATE_SPEECH"  
-      threshold: "BLOCK_MEDIUM_AND_ABOVE"
-    - category: "HARM_CATEGORY_SEXUALLY_EXPLICIT"
-      threshold: "BLOCK_MEDIUM_AND_ABOVE"
-    - category: "HARM_CATEGORY_DANGEROUS_CONTENT"
-      threshold: "BLOCK_MEDIUM_AND_ABOVE"
 
-# Hugging Face Configuration - for embeddings
 huggingface:
   embeddings:
-    # sentence-transformers models available:
-    # - "sentence-transformers/all-MiniLM-L6-v2" (384 dimensions, fast)
-    # - "sentence-transformers/all-mpnet-base-v2" (768 dimensions, better quality)
-    # - "sentence-transformers/all-MiniLM-L12-v2" (384 dimensions, balanced)
     model: "sentence-transformers/all-MiniLM-L6-v2"
-    device: "auto"  # auto, cpu, cuda
-    
-  llm:
-    model: "microsoft/DialoGPT-medium"
-    temperature: 0.1
-    max_tokens: 1000
     device: "auto"
-    
-  question_answering:
-    model: "deepset/roberta-base-squad2"
 
-# Legacy format for backward compatibility
 llm:
   provider: "gemini"
   model: "gemini-1.5-flash"
@@ -53,7 +25,7 @@ llm:
   max_output_tokens: 2048
 
 embeddings:
-  provider: "huggingface"  # Changed to huggingface
+  provider: "huggingface"
   model: "sentence-transformers/all-MiniLM-L6-v2"
   chunk_size: 1000
   chunk_overlap: 200
@@ -61,7 +33,7 @@ embeddings:
 vector_store:
   provider: "qdrant"
   collection_name: "documents"
-  vector_size: 384  # all-MiniLM-L6-v2 uses 384 dimensions
+  vector_size: 384
   distance: "cosine"
   host: "localhost"
   port: 6333
@@ -71,22 +43,13 @@ retrieval:
   similarity_threshold: 0.7
 
 parsing:
-  use_llama_parse: true
+  use_llama_parse: false
   extract_images: false
 
 memory:
   enabled: true
   max_tokens: 4000
 
-# Model Fallback Strategy
-fallback:
-  enabled: true
-  order:
-    - "gemini"
-    - "huggingface" 
-    - "openai"
-    
-# Performance Settings
 performance:
   batch_size: 10
   max_workers: 4
