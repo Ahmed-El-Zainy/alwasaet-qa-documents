@@ -1,7 +1,7 @@
 import logging
 from typing import Dict, Any, List, Optional
 import yaml
-from .rag_engine import RAGEngine
+from .rag_engine import BilingualRAGEngine
 import os 
 import sys 
 
@@ -67,7 +67,7 @@ class AgenticRAG:
         with open(config_path, 'r') as f:
             self.config = yaml.safe_load(f)
         
-        self.rag_engine = RAGEngine(config_path)
+        self.rag_engine = BilingualRAGEngine(config_path)
         
         # Initialize memory if enabled
         if self.config['memory']['enabled']:
