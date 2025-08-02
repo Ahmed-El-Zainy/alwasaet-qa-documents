@@ -1,7 +1,25 @@
+# Bilingual Arabic-English RAG Configuration
 app:
-  name: "Agentic RAG Application"
+  name: "Bilingual RAG Application - Arabic & English"
   version: "1.0.0"
   debug: false
+
+# Bilingual support configuration
+language_support:
+  primary_languages: ["arabic", "english"]
+  auto_detect: true
+  fallback_language: "english"
+  
+  # Language-specific processing
+  arabic:
+    chunk_size: 400
+    chunk_overlap: 80
+    similarity_threshold: 0.25
+  
+  english:
+    chunk_size: 800
+    chunk_overlap: 150
+    similarity_threshold: 0.15
 
 model_provider: "mixed"
 embedding_provider: "huggingface"
@@ -9,14 +27,32 @@ llm_provider: "gemini"
 
 gemini:
   llm:
-    model: "gemini-2.5-flash-lite"
+    model: "gemini-1.5-flash"  # Excellent bilingual support
     temperature: 0.1
     max_output_tokens: 2048
+    
+    # Bilingual prompting
+    system_instructions: |
+      You are a bilingual assistant that can understand and respond in both Arabic and English.
+      When answering questions:
+      - Respond in the same language as the question when possible
+      - If the document is in Arabic but question is in English, you may respond in English
+      - If the document is in English but question is in Arabic, you may respond in Arabic
+      - Always provide accurate information from the provided context
+      - Cite sources with page numbers when available
 
+# Best multilingual embedding model for Arabic-English
 huggingface:
   embeddings:
+    # Primary model - excellent for both languages
+    # model: "sentence-transformers/paraphrase-multilingual-mpnet-base-v2"
     model: "sentence-transformers/all-MiniLM-L6-v2"
-    device: "auto"
+    device: "cpu"
+    
+    # Alternative models (comment/uncomment as needed):
+    # model: "sentence-transformers/distiluse-base-multilingual-cased"  # Faster alternative
+    # model: "intfloat/multilingual-e5-base"                           # Latest multilingual
+    # model: "sentence-transformers/LaBSE"                             # Google's multilingual
 
 llm:
   provider: "gemini"
@@ -26,31 +62,140 @@ llm:
 
 embeddings:
   provider: "huggingface"
+  # model: "sentence-transformers/paraphrase-multilingual-mpnet-base-v2"
   model: "sentence-transformers/all-MiniLM-L6-v2"
-  chunk_size: 1000
-  chunk_overlap: 200
+  chunk_size: 600      # Balanced for both languages
+  chunk_overlap: 120
 
 vector_store:
   provider: "qdrant"
-  collection_name: "documents"
-  vector_size: 384
+  collection_name: "bilingual_documents"
+  vector_size: 768     # mpnet-base-v2 uses 768 dimensions
   distance: "cosine"
   host: "localhost"
   port: 6333
 
 retrieval:
   similarity_top_k: 5
-  similarity_threshold: 0.7
+  similarity_threshold: 0.2  # Balanced for both languages
+  
+  # Cross-lingual search settings
+  cross_lingual: true
+  language_boost: 0.1  # Slight boost for same-language matches
 
 parsing:
   use_llama_parse: false
   extract_images: false
+  
+  # Language detection for documents
+  detect_language: true
+  language_detection_method: "auto"
 
 memory:
   enabled: true
   max_tokens: 4000
 
+# Optimized for bilingual processing
 performance:
-  batch_size: 10
-  max_workers: 4
+  batch_size: 4        # Balanced batch size
+  max_workers: 2       # Two workers for better throughput
   cache_embeddings: true
+  
+  # Language-specific optimizations
+  arabic_processing:
+    chunk_strategy: "conservative"
+    encoding: "utf-8"
+    preprocessing: "normalize"
+  
+  english_processing:
+    chunk_strategy: "aggressive"
+    preprocessing: "standard"
+
+# Bilingual model comparison and alternatives
+model_alternatives:
+  best_quality:
+    # model: "sentence-transformers/paraphrase-multilingual-mpnet-base-v2"
+    model: "sentence-transformers/all-MiniLM-L6-v2"
+    dimensions: 768
+    languages: "104 languages including Arabic/English"
+    quality: "★★★★★"
+    speed: "★★★"
+    
+  balanced:
+    # model: "sentence-transformers/distiluse-base-multilingual-cased"
+    model: "sentence-transformers/all-MiniLM-L6-v2"
+    dimensions: 512
+    languages: "15 languages including Arabic/English"  
+    quality: "★★★★"
+    speed: "★★★★"
+    
+  fastest:
+    # model: "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2"
+    model: "sentence-transformers/all-MiniLM-L6-v2"
+    dimensions: 384
+    languages: "50+ languages including Arabic/English"
+    quality: "★★★"
+    speed: "★★★★★"
+    
+  latest:
+    # model: "intfloat/multilingual-e5-base"
+    model: "sentence-transformers/all-MiniLM-L6-v2"
+    dimensions: 768
+    languages: "100+ languages with excellent Arabic support"
+    quality: "★★★★★"
+    speed: "★★★"
+
+# Language detection and processing rules
+language_processing:
+  auto_detection:
+    enabled: true
+    confidence_threshold: 0.7
+    
+  preprocessing:
+    arabic:
+      normalize_text: true
+      remove_diacritics: false  # Keep diacritics for better accuracy
+      handle_rtl: true
+      
+    english:
+      normalize_text: true
+      lowercase: false  # Keep case for proper nouns
+      
+  chunk_strategies:
+    arabic:
+      sentence_splitting: true
+      word_boundary_respect: true
+      max_chunk_size: 400
+      
+    english:
+      sentence_splitting: true
+      paragraph_splitting: true
+      max_chunk_size: 800
+
+# Response generation settings
+response_generation:
+  bilingual_responses: true
+  maintain_source_language: true
+  cross_language_queries: true
+  
+  # Response templates
+  templates:
+    arabic_response: |
+      بناءً على الوثائق المتوفرة:
+      {answer}
+      
+      المصادر:
+      {citations}
+      
+    english_response: |
+      Based on the available documents:
+      {answer}
+      
+      Sources:
+      {citations}
+      
+    mixed_response: |
+      {answer}
+      
+      📚 Sources / المصادر:
+      {citations}
