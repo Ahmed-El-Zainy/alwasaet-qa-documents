@@ -9,17 +9,12 @@ import yaml
 # fmt: off
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 # print(f"SCRIPT_DIR: {SCRIPT_DIR}")
-# print(f"os.path.dirname(SCRIPT_DIR): {os.path.dirname(SCRIPT_DIR)}")
-# print(f"os.path.dirname(os.path.dirname(SCRIPT_DIR)): {os.path.dirname(os.path.dirname(SCRIPT_DIR))}")
+print(f"os.path.dirname(SCRIPT_DIR): {os.path.dirname(SCRIPT_DIR)}")
+print(f"os.path.dirname(os.path.dirname(SCRIPT_DIR)): {os.path.dirname(os.path.dirname(SCRIPT_DIR))}")
 # print(lol)
 sys.path.append(os.path.dirname(SCRIPT_DIR))
 
-
-# print(f"SCRIPT_DIR: {SCRIPT_DIR}")
-# print(f"os.path.dirname(SCRIPT_DIR): {os.path.dirname(SCRIPT_DIR)}")
-# print(f"os.path.dirname(os.path.dirname(SCRIPT_DIR)): {os.path.dirname(os.path.dirname(SCRIPT_DIR))}")
-
-from utils.document_processor import DocumentProcessor
+from utils.document_processor import BilingualDocumentProcessor
 from utils.vector_store import VectorStoreManager
 from utils.agent import AgenticRAG
 
@@ -66,7 +61,7 @@ class RAGApplication:
             self.config = yaml.safe_load(f)
         
         # Initialize components
-        self.doc_processor = DocumentProcessor(config_path)
+        self.doc_processor = BilingualDocumentProcessor(config_path)
         self.vector_manager = VectorStoreManager(config_path)
         self.agent = AgenticRAG(config_path)
         
