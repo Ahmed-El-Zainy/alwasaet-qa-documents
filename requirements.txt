@@ -15,3 +15,8 @@ typing-extensions==4.9.0
 nest-asyncio==1.5.8
 google-generativeai
 sentence-transformers==2.2.2
+# Install Hugging Face embeddings support
+# pip install llama-index-embeddings-huggingface>=0.2.0
+# pip install sentence-transformers>=2.2.2
+# pip install torch>=1.9.0
+# pip install transformers>=4.20.0
