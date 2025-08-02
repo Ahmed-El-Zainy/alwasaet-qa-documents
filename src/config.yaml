@@ -5,20 +5,16 @@ app:
   debug: false
 
 # Model Provider Configuration
-# Options: "gemini", "huggingface", "openai"
-# AIzaSyBvNhT9X4ilJ2MQ0O-J8Ee4ZBmAQayH3Zk
-model_provider: "gemini"  # Changed to HuggingFace as primary
+model_provider: "gemini"  # LLM still uses Gemini
+embedding_provider: "huggingface"  # Embeddings use Hugging Face
 
-# Gemini Configuration (Google AI)
+# Gemini Configuration (Google AI) - for LLM only
 gemini:
   llm:
-    # Available models: "gemini-pro", "gemini-1.5-flash", "gemini-1.5-pro" 
-    model: "gemini-pro" 
+    # Available models: "gemini-1.5-flash", "gemini-1.5-pro", "gemini-pro"
+    model: "models/gemini-1.5-flash"  # Updated to working model
     temperature: 0.1
     max_output_tokens: 2048
-    
-  embeddings:
-    model: "models/embedding-001"
     
   safety_settings:
     - category: "HARM_CATEGORY_HARASSMENT"
@@ -30,46 +26,34 @@ gemini:
     - category: "HARM_CATEGORY_DANGEROUS_CONTENT"
       threshold: "BLOCK_MEDIUM_AND_ABOVE"
 
-
-
-# Hugging Face Configuration
+# Hugging Face Configuration - for embeddings
 huggingface:
+  embeddings:
+    # sentence-transformers models available:
+    # - "sentence-transformers/all-MiniLM-L6-v2" (384 dimensions, fast)
+    # - "sentence-transformers/all-mpnet-base-v2" (768 dimensions, better quality)
+    # - "sentence-transformers/all-MiniLM-L12-v2" (384 dimensions, balanced)
+    model: "sentence-transformers/all-MiniLM-L6-v2"
+    device: "auto"  # auto, cpu, cuda
+    
   llm:
-    # Options: "microsoft/DialoGPT-medium", "google/flan-t5-large", "meta-llama/Llama-2-7b-chat-hf"
     model: "microsoft/DialoGPT-medium"
     temperature: 0.1
     max_tokens: 1000
-    device: "auto"  # auto, cpu, cuda
-    
-  embeddings:
-    # Options: "sentence-transformers/all-MiniLM-L6-v2", "sentence-transformers/all-mpnet-base-v2"
-    model: "sentence-transformers/all-MiniLM-L6-v2"
     device: "auto"
     
   question_answering:
-    # Specialized QA models
-    model: "deepset/roberta-base-squad2" 
-    # Alternative: "distilbert-base-cased-distilled-squad"
-
-# OpenAI Configuration (backup option)
-openai:
-  llm:
-    model: "gpt-3.5-turbo"
-    temperature: 0.1
-    max_tokens: 1000
-    
-  embeddings:
-    model: "text-embedding-3-small"
+    model: "deepset/roberta-base-squad2"
 
 # Legacy format for backward compatibility
 llm:
-  provider: "huggingface"  # Changed from gemini
-  model: "microsoft/DialoGPT-medium"
+  provider: "gemini"
+  model: "gemini-1.5-flash"
   temperature: 0.1
-  max_output_tokens: 1000
+  max_output_tokens: 2048
 
 embeddings:
-  provider: "huggingface"  # Changed from gemini
+  provider: "huggingface"  # Changed to huggingface
   model: "sentence-transformers/all-MiniLM-L6-v2"
   chunk_size: 1000
   chunk_overlap: 200
@@ -77,7 +61,7 @@ embeddings:
 vector_store:
   provider: "qdrant"
   collection_name: "documents"
-  vector_size: 384  # Updated for sentence-transformers/all-MiniLM-L6-v2
+  vector_size: 384  # all-MiniLM-L6-v2 uses 384 dimensions
   distance: "cosine"
   host: "localhost"
   port: 6333
@@ -98,8 +82,8 @@ memory:
 fallback:
   enabled: true
   order:
-    - "huggingface"
-    - "gemini" 
+    - "gemini"
+    - "huggingface" 
     - "openai"
     
 # Performance Settings
@@ -107,4 +91,3 @@ performance:
   batch_size: 10
   max_workers: 4
   cache_embeddings: true
-
