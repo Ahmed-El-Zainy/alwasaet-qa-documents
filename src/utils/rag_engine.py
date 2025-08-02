@@ -28,7 +28,7 @@ except ImportError:
     logger.info("Using standard logger - custom logger not available")
 
 class RAGEngine:
-    """Retrieval-Augmented Generation Engine with Gemini"""
+    """Retrieval-Augmented Generation Engine with Gemini LLM and Hugging Face Embeddings"""
     
     def __init__(self, config_path: str = "src/config.yaml"):
         with open(config_path, 'r') as f:
@@ -37,38 +37,64 @@ class RAGEngine:
         self.similarity_top_k = self.config['retrieval']['similarity_top_k']
         self.similarity_threshold = self.config['retrieval']['similarity_threshold']
         
-        # Initialize Gemini LLM
-        logger.info(f"Loading Gemini configuration: {self.config['gemini']['llm']}")
-        model_name = self.config['gemini']['llm']['model']
-        logger.info(f"Using model: {model_name}")
-        
-        self.llm = Gemini(
-            model=model_name,
-            api_key=os.getenv("GOOGLE_API_KEY"),
-            temperature=self.config['gemini']['llm']['temperature'],
-            max_tokens=self.config['gemini']['llm']['max_output_tokens'],
-            safety_settings=[
-                {
-                    "category": "HARM_CATEGORY_HARASSMENT",
-                    "threshold": "BLOCK_MEDIUM_AND_ABOVE",
-                },
-                {
-                    "category": "HARM_CATEGORY_HATE_SPEECH",
-                    "threshold": "BLOCK_MEDIUM_AND_ABOVE",
-                },
-                {
-                    "category": "HARM_CATEGORY_SEXUALLY_EXPLICIT",
-                    "threshold": "BLOCK_MEDIUM_AND_ABOVE",
-                },
-                {
-                    "category": "HARM_CATEGORY_DANGEROUS_CONTENT",
-                    "threshold": "BLOCK_MEDIUM_AND_ABOVE",
-                },
-            ]
-        )
+        # Initialize Gemini LLM (keeping Gemini for generation)
+        self._initialize_llm()
         
         self.index = None
         self.query_engine = None
+    
+    def _initialize_llm(self):
+        """Initialize Gemini LLM"""
+        gemini_config = self.config.get('gemini', {}).get('llm', {})
+        model_name = gemini_config.get('model', 'gemini-1.5-flash')
+        
+        # Validate model name
+        valid_models = [
+            "gemini-1.5-flash",
+            "gemini-1.5-pro", 
+            "gemini-pro"
+        ]
+        
+        if model_name not in valid_models:
+            logger.warning(f"Invalid model '{model_name}', falling back to 'gemini-1.5-flash'")
+            model_name = "models/gemini-1.5-flash"
+        
+        logger.info(f"Loading Gemini LLM configuration: {gemini_config}")
+        logger.info(f"Using Gemini model: {model_name}")
+        
+        # Check for API key
+        api_key = os.getenv("GOOGLE_API_KEY")
+        if not api_key:
+            raise ValueError("GOOGLE_API_KEY environment variable is required for Gemini LLM")
+        
+        try:
+            self.llm = Gemini(
+                model=model_name,
+                api_key=api_key,
+                temperature=gemini_config.get('temperature', 0.1),
+                max_tokens=gemini_config.get('max_output_tokens', 2048)
+            )
+            logger.info(f"Successfully initialized Gemini LLM: {model_name}")
+            
+        except Exception as e:
+            logger.error(f"Failed to initialize Gemini with {model_name}: {str(e)}")
+            # Try fallback model
+            fallback_model = "gemini-1.5-flash"
+            if model_name != fallback_model:
+                logger.info(f"Trying fallback model: {fallback_model}")
+                try:
+                    self.llm = Gemini(
+                        model=fallback_model,
+                        api_key=api_key,
+                        temperature=gemini_config.get('temperature', 0.1),
+                        max_tokens=gemini_config.get('max_output_tokens', 2048)
+                    )
+                    logger.info(f"Successfully initialized Gemini with fallback model: {fallback_model}")
+                except Exception as fallback_error:
+                    logger.error(f"Failed to initialize Gemini with fallback model: {str(fallback_error)}")
+                    raise
+            else:
+                raise
     
     def setup_engine(self, index: VectorStoreIndex):
         """Setup the query engine with the provided index"""
@@ -96,6 +122,7 @@ class RAGEngine:
             "Given the context information and not prior knowledge, "
             "answer the query. If the context doesn't contain relevant information "
             "to answer the query, respond with 'No answer found'.\n"
+            "Be precise and cite specific information from the context when possible.\n"
             "Query: {query_str}\n"
             "Answer: "
         )
@@ -110,7 +137,16 @@ class RAGEngine:
         # Update the query engine's prompt
         self.query_engine.update_prompts({"response_synthesizer:text_qa_template": qa_prompt})
         
-        logger.info("RAG engine setup complete with Gemini")
+        # Log the setup information
+        embedding_provider = self.config.get('embedding_provider', 'huggingface')
+        embedding_model = self.config.get('huggingface', {}).get('embeddings', {}).get('model', 'sentence-transformers/all-MiniLM-L6-v2')
+        
+        logger.info(f"RAG engine setup complete:")
+        logger.info(f"  - LLM: Gemini ({self.config.get('gemini', {}).get('llm', {}).get('model', 'gemini-1.5-flash')})")
+        logger.info(f"  - Embeddings: {embedding_provider} ({embedding_model})")
+        logger.info(f"  - Vector DB: Qdrant")
+        logger.info(f"  - Similarity threshold: {self.similarity_threshold}")
+        logger.info(f"  - Top-k retrieval: {self.similarity_top_k}")
     
     def query(self, question: str) -> Dict[str, Any]:
         """Query the RAG engine"""
@@ -118,29 +154,33 @@ class RAGEngine:
             raise ValueError("Query engine not initialized. Call setup_engine first.")
         
         try:
+            logger.info(f"Processing query: {question}")
             response = self.query_engine.query(question)
             
             # Extract citations
             citations = self._extract_citations(response)
             
             # Check if answer was found
-            if not response.response or "no answer found" in response.response.lower() or "sorry" in response.response.lower():
+            answer_text = response.response if response.response else ""
+            if not answer_text or "no answer found" in answer_text.lower() or "sorry" in answer_text.lower():
+                logger.info("No relevant answer found in documents")
                 return {
-                    "answer": "No answer found",
+                    "answer": "No answer found in the provided documents.",
                     "citations": [],
                     "source_nodes": []
                 }
             
+            logger.info(f"Found answer with {len(citations)} citations")
             return {
-                "answer": response.response,
+                "answer": answer_text,
                 "citations": citations,
                 "source_nodes": response.source_nodes
             }
             
         except Exception as e:
-            logger.error(f"Error during query: {str(e)}")
+            logger.error(f"Error during query processing: {str(e)}")
             return {
-                "answer": "Error processing query",
+                "answer": f"Error processing query: {str(e)}",
                 "citations": [],
                 "source_nodes": []
             }
@@ -160,7 +200,28 @@ class RAGEngine:
         
         return citations
     
-
+    def get_model_info(self) -> Dict[str, str]:
+        """Get information about the models being used"""
+        embedding_provider = self.config.get('embedding_provider', 'huggingface')
+        if embedding_provider == 'huggingface':
+            embedding_model = self.config.get('huggingface', {}).get('embeddings', {}).get('model', 'sentence-transformers/all-MiniLM-L6-v2')
+        else:
+            embedding_model = self.config.get('gemini', {}).get('embeddings', {}).get('model', 'models/embedding-001')
+        
+        return {
+            "llm_provider": "gemini",
+            "llm_model": self.config.get('gemini', {}).get('llm', {}).get('model', 'gemini-1.5-flash'),
+            "embedding_provider": embedding_provider,
+            "embedding_model": embedding_model,
+            "vector_store": "qdrant"
+        }
 
 if __name__=="__main__":
     logger.info("test....")
+    # Test the RAG engine
+    try:
+        engine = RAGEngine("src/config.yaml")
+        info = engine.get_model_info()
+        print(f"Model Info: {info}")
+    except Exception as e:
+        print(f"Error: {e}")
