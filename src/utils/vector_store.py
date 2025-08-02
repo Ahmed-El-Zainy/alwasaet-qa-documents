@@ -46,7 +46,8 @@ class VectorStoreManager:
         
         # Initialize Gemini embedding model with proper model name
         logger.info(f"Loading Gemini embeddings configuration: {self.config['huggingface']['embeddings']}")
-        embedding_model = self.config['huggingface']['embeddings']['model']
+        # embedding_model = self.config['huggingface']['embeddings']['model']
+        embedding_model = "models/text-embedding-004"
         
         # Validate embedding model name
         valid_embedding_models = [

@@ -7,9 +7,10 @@ from llama_index.core.query_engine import RetrieverQueryEngine
 from llama_index.core.retrievers import VectorIndexRetriever
 from llama_index.core.postprocessor import SimilarityPostprocessor
 from llama_index.core import Response
-from llama_index.llms.gemini import Gemini
+# from llama_index.llms.gemini import Gemini
 import sys 
 import os 
+import google.generativeai as genai
 
 # fmt: off
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -68,12 +69,15 @@ class RAGEngine:
             raise ValueError("GOOGLE_API_KEY environment variable is required for Gemini LLM")
         
         try:
-            self.llm = Gemini(
-                model=model_name,
-                api_key=api_key,
-                temperature=gemini_config.get('temperature', 0.1),
-                max_tokens=gemini_config.get('max_output_tokens', 2048)
-            )
+            self.llm = genai.GenerativeModel(
+                model_name)
+            
+            # Gemini(
+            #     model=model_name,
+            #     api_key=api_key,
+            #     temperature=gemini_config.get('temperature', 0.1),
+            #     max_tokens=gemini_config.get('max_output_tokens', 2048)
+            # )
             logger.info(f"Successfully initialized Gemini LLM: {model_name}")
             
         except Exception as e:
@@ -83,11 +87,11 @@ class RAGEngine:
             if model_name != fallback_model:
                 logger.info(f"Trying fallback model: {fallback_model}")
                 try:
-                    self.llm = Gemini(
-                        model=fallback_model,
-                        api_key=api_key,
-                        temperature=gemini_config.get('temperature', 0.1),
-                        max_tokens=gemini_config.get('max_output_tokens', 2048)
+                    self.llm = genai.GenerativeModel(
+                        model=fallback_model
+                        # api_key=api_key,
+                        # temperature=gemini_config.get('temperature', 0.1),
+                        # max_tokens=gemini_config.get('max_output_tokens', 2048)
                     )
                     logger.info(f"Successfully initialized Gemini with fallback model: {fallback_model}")
                 except Exception as fallback_error:

@@ -8,7 +8,12 @@ import yaml
 
 # fmt: off
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+# print(f"SCRIPT_DIR: {SCRIPT_DIR}")
+# print(f"os.path.dirname(SCRIPT_DIR): {os.path.dirname(SCRIPT_DIR)}")
+# print(f"os.path.dirname(os.path.dirname(SCRIPT_DIR)): {os.path.dirname(os.path.dirname(SCRIPT_DIR))}")
+# print(lol)
 sys.path.append(os.path.dirname(SCRIPT_DIR))
+
 
 # print(f"SCRIPT_DIR: {SCRIPT_DIR}")
 # print(f"os.path.dirname(SCRIPT_DIR): {os.path.dirname(SCRIPT_DIR)}")
@@ -35,11 +40,25 @@ except ImportError:
     logger.info("Using standard logger - custom logger not available")
 
 
+
+def load_config(config_path: str):
+    with open(config_path, 'r') as f:
+        return yaml.safe_load(f)
+
+# config = load_config("config.yaml")
+# print(f"config: {config}")
+# print(lol)
+
 class RAGApplication:
     """Main RAG Application class with Gemini integration"""
     
-    def __init__(self, config_path: str = "src/config.yaml"):
-        
+    def __init__(self, config_path: str = "config.yaml"):
+        test_path = os.path.dirname(os.path.abspath(__file__))
+        # print(f"test_path: {test_path}")
+        # print(f"os.path.dirname(test_path): {os.path.dirname(test_path)}")
+        # print(lol)
+        sys.path.append(os.path.dirname(os.path.dirname(test_path)))
+
         self.config_path = config_path
         
         # Load configuration
